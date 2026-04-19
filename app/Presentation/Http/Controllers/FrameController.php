@@ -4,17 +4,41 @@ namespace App\Presentation\Http\Controllers;
 
 use App\Application\Services\GetFramesService;
 use App\Application\Services\UploadFrameService;
+use App\Domain\Interfaces\FrameRepositoryInterface;
 use Illuminate\Http\Request;
 
 class FrameController extends Controller
 {
     protected GetFramesService $getFramesService;
     protected UploadFrameService $uploadFrameService;
+    protected FrameRepositoryInterface $frameRepo;
 
-    public function __construct(GetFramesService $getFramesService, UploadFrameService $uploadFrameService)
-    {
+    public function __construct(
+        GetFramesService $getFramesService, 
+        UploadFrameService $uploadFrameService,
+        FrameRepositoryInterface $frameRepo
+    ) {
         $this->getFramesService = $getFramesService;
         $this->uploadFrameService = $uploadFrameService;
+        $this->frameRepo = $frameRepo;
+    }
+
+    public function landing()
+    {
+        $popular = $this->frameRepo->getPopularFrames(4);
+        $recent = $this->frameRepo->getRecentFrames(4);
+        return view('landing', compact('popular', 'recent'));
+    }
+
+    public function gallery()
+    {
+        $frames = $this->frameRepo->getActiveFrames();
+        return view('frames.index', compact('frames'));
+    }
+
+    public function studio()
+    {
+        return view('studio');
     }
 
     public function index()
@@ -31,13 +55,7 @@ class FrameController extends Controller
             'slots' => 'nullable|string',
         ]);
 
-        $slots = null;
-        if ($request->filled('slots')) {
-            $slotsDecoded = json_decode($request->input('slots'), true);
-            if (is_array($slotsDecoded)) {
-                $slots = $slotsDecoded;
-            }
-        }
+        $slots = $request->filled('slots') ? json_decode($request->input('slots'), true) : null;
 
         $frame = $this->uploadFrameService->execute(
             $request->input('name'),
@@ -46,5 +64,11 @@ class FrameController extends Controller
         );
 
         return $this->successResponse($frame, 'Frame uploaded successfully.', 201);
+    }
+
+    public function download(int $id)
+    {
+        $this->frameRepo->incrementDownloadCount($id);
+        return $this->successResponse(null, 'Download count updated.');
     }
 }

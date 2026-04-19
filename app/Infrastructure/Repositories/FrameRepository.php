@@ -14,6 +14,21 @@ class FrameRepository extends BaseRepository implements FrameRepositoryInterface
 
     public function getActiveFrames()
     {
-        return $this->model->where('is_active', true)->orderBy('created_at', 'desc')->get();
+        return $this->model->with('user')->where('is_active', true)->orderBy('created_at', 'desc')->get();
+    }
+
+    public function getRecentFrames(int $limit = 4)
+    {
+        return $this->model->with('user')->where('is_active', true)->orderBy('created_at', 'desc')->limit($limit)->get();
+    }
+
+    public function getPopularFrames(int $limit = 4)
+    {
+        return $this->model->with('user')->where('is_active', true)->orderBy('download_count', 'desc')->limit($limit)->get();
+    }
+
+    public function incrementDownloadCount(int $id): void
+    {
+        $this->model->where('id', $id)->increment('download_count');
     }
 }

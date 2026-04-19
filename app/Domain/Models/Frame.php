@@ -15,6 +15,7 @@ class Frame extends Model
         'image_path',
         'slots',
         'is_active',
+        'download_count',
     ];
 
     protected function casts(): array
